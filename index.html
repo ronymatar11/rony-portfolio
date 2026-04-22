@@ -1049,21 +1049,7 @@ function handleCameraTap(uvx,uvy){
   if(phoneCameraState==='captured'){
     // Send to Rony — WhatsApp button (y 415-459)
     if(canvasY>415&&canvasY<460){
-      var waMsg=encodeURIComponent('Hey Rony! 📸 I just took a selfie on your portfolio — check it out! ronymatar.com 🎬');
-      selfieCanvas.toBlob(function(blob){
-        var file=new File([blob],'selfie-for-rony.jpg',{type:'image/jpeg'});
-        if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-          navigator.share({
-            title:'Selfie for Rony 📸',
-            text:'Hey Rony! I took a selfie on your portfolio! 🎬',
-            files:[file]
-          }).catch(function(){
-            window.open('https://wa.me/96171015510?text='+waMsg,'_blank');
-          });
-        } else {
-          window.open('https://wa.me/96171015510?text='+waMsg,'_blank');
-        }
-      },'image/jpeg',0.9);
+      window.open('https://wa.me/96171015510?text='+encodeURIComponent('nice website'),'_blank');
       return true;
     }
     // Retake button (y 468-504)
