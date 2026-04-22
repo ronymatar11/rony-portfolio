@@ -928,38 +928,151 @@ function openPhoneCamera(){
 function drawCameraScreen(){
   var ctx=pScrCtx,W2=256,H2=512;
   ctx.fillStyle='#000'; ctx.fillRect(0,0,W2,H2);
+
   if(phoneCameraState==='live'&&phoneCameraVideo.readyState>=2){
+    // Live viewfinder
     ctx.save(); ctx.translate(W2,0); ctx.scale(-1,1);
     var vw=phoneCameraVideo.videoWidth,vh=phoneCameraVideo.videoHeight;
     var scale=Math.max(W2/vw,H2/vh),dw=vw*scale,dh=vh*scale;
     ctx.drawImage(phoneCameraVideo,(W2-dw)/2,(H2-dh)/2,dw,dh); ctx.restore();
-    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(0,0,W2,50);
-    ctx.fillStyle='#fff'; ctx.font='bold 12px Helvetica,Arial'; ctx.textAlign='center';
-    ctx.fillText('📸 Take a Selfie',W2/2,30);
-    ctx.strokeStyle='#fff'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.arc(W2/2,H2-35,25,0,Math.PI*2); ctx.stroke();
-    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(W2/2,H2-35,20,0,Math.PI*2); ctx.fill();
-  } else {
+
+    // Top bar
+    var topG=ctx.createLinearGradient(0,0,0,70);
+    topG.addColorStop(0,'rgba(0,0,0,0.7)'); topG.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=topG; ctx.fillRect(0,0,W2,70);
+    ctx.fillStyle='#fff'; ctx.font='bold 13px Helvetica,Arial'; ctx.textAlign='center';
+    ctx.fillText('📸 Selfie for Rony',W2/2,24);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='10px Helvetica,Arial';
+    ctx.fillText('Tap the button to snap',W2/2,42);
+
+    // Corner guides
+    ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=2;
+    [[30,80],[W2-30,80],[30,H2-130],[W2-30,H2-130]].forEach(function(pt){
+      var cx=pt[0],cy=pt[1],s=14,flip=cx>W2/2?1:-1,fv=cy>H2/2?1:-1;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+flip*s,cy);ctx.moveTo(cx,cy);ctx.lineTo(cx,cy+fv*s);ctx.stroke();
+    });
+
+    // Bottom bar
+    var botG=ctx.createLinearGradient(0,H2-100,0,H2);
+    botG.addColorStop(0,'rgba(0,0,0,0)'); botG.addColorStop(1,'rgba(0,0,0,0.8)');
+    ctx.fillStyle=botG; ctx.fillRect(0,H2-100,W2,100);
+
+    // Shutter button
+    ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(W2/2,H2-38,26,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(W2/2,H2-38,20,0,Math.PI*2); ctx.fill();
+
+    // Close X
+    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.font='bold 18px Helvetica,Arial'; ctx.textAlign='left';
+    ctx.fillText('✕',14,H2-30);
+
+  } else if(phoneCameraState==='captured'&&phoneCapturedImage&&phoneCapturedImage.complete){
+    // Show captured photo (top 360px)
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0,0,W2,360); ctx.clip();
+    ctx.drawImage(phoneCapturedImage,0,0,W2,360);
+    ctx.restore();
+
+    // Flash effect vignette
+    var vig=ctx.createRadialGradient(W2/2,180,60,W2/2,180,160);
+    vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,0.35)');
+    ctx.fillStyle=vig; ctx.fillRect(0,0,W2,360);
+
+    // Stamp overlay
+    ctx.save();
+    ctx.translate(W2/2,180); ctx.rotate(-0.08);
+    ctx.fillStyle='rgba(255,255,255,0.12)'; ctx.strokeStyle='rgba(255,255,255,0.4)';
+    ctx.lineWidth=2; ctx.strokeRect(-70,-28,140,56);
+    ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.font='bold 11px Helvetica,Arial'; ctx.textAlign='center';
+    ctx.fillText('📸 ronymatar.com',0,8);
+    ctx.restore();
+
+    // Bottom panel
+    ctx.fillStyle='#0a0a14'; ctx.fillRect(0,360,W2,H2-360);
+
+    // Title
+    ctx.fillStyle='#fff'; ctx.font='bold 15px Helvetica,Arial'; ctx.textAlign='center';
+    ctx.fillText('Looking good! 🔥',W2/2,388);
+    ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.font='10px Helvetica,Arial';
+    ctx.fillText('Send it to Rony on WhatsApp',W2/2,405);
+
+    // Send to Rony button (WhatsApp green)
+    ctx.fillStyle='#25D366';
+    ctx.beginPath(); ctx.roundRect(16,415,224,44,22); ctx.fill();
     ctx.fillStyle='#fff'; ctx.font='bold 14px Helvetica,Arial'; ctx.textAlign='center';
-    ctx.fillText('Opening camera...',W2/2,H2/2);
+    ctx.fillText('💬 Send to Rony',W2/2,442);
+
+    // Retake button
+    ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(16,468,224,36,18); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='bold 12px Helvetica,Arial';
+    ctx.fillText('↩ Retake',W2/2,491);
+
+  } else {
+    // Loading state
+    ctx.fillStyle='#0a0a14'; ctx.fillRect(0,0,W2,H2);
+    ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.font='bold 14px Helvetica,Arial'; ctx.textAlign='center';
+    ctx.fillText('Opening camera...',W2/2,H2/2-10);
+    ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.font='11px Helvetica,Arial';
+    ctx.fillText('Allow camera access',W2/2,H2/2+14);
   }
   pScrTex.needsUpdate=true;
 }
 
 function handleCameraTap(uvx,uvy){
   var canvasX=uvx*256,canvasY=(1-uvy)*512;
+
   if(phoneCameraState==='live'){
-    if(canvasY>430&&canvasX>80&&canvasX<176){
+    // Close X (bottom-left)
+    if(canvasY>455&&canvasX<50){ closePhoneCamera(); return true; }
+    // Shutter button (bottom center)
+    if(canvasY>430){
       selfieCanvas.width=256; selfieCanvas.height=512;
       var sc=selfieCanvas.getContext('2d');
       sc.save(); sc.translate(256,0); sc.scale(-1,1);
       var vw=phoneCameraVideo.videoWidth,vh=phoneCameraVideo.videoHeight;
       var scale=Math.max(256/vw,512/vh),dw=vw*scale,dh=vh*scale;
       sc.drawImage(phoneCameraVideo,(256-dw)/2,(512-dh)/2,dw,dh); sc.restore();
-      phoneCapturedImage=new Image(); phoneCapturedImage.src=selfieCanvas.toDataURL('image/jpeg',0.85);
+      // Watermark
+      sc.fillStyle='rgba(0,0,0,0.45)'; sc.fillRect(0,512-36,256,36);
+      sc.fillStyle='#fff'; sc.font='bold 10px Helvetica,Arial'; sc.textAlign='center';
+      sc.fillText('📸 ronymatar.com',128,512-14);
+      phoneCapturedImage=new Image(); phoneCapturedImage.src=selfieCanvas.toDataURL('image/jpeg',0.9);
       phoneCameraState='captured';
       if(phoneCameraStream)phoneCameraStream.getTracks().forEach(function(t){t.stop();});
-      drawCameraScreen(); return true;
+      setTimeout(drawCameraScreen,100);
+      return true;
+    }
+  }
+
+  if(phoneCameraState==='captured'){
+    // Send to Rony — WhatsApp button (y 415-459)
+    if(canvasY>415&&canvasY<460){
+      var waMsg=encodeURIComponent('Hey Rony! 📸 I just took a selfie on your portfolio — check it out! ronymatar.com 🎬');
+      selfieCanvas.toBlob(function(blob){
+        var file=new File([blob],'selfie-for-rony.jpg',{type:'image/jpeg'});
+        if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+          navigator.share({
+            title:'Selfie for Rony 📸',
+            text:'Hey Rony! I took a selfie on your portfolio! 🎬',
+            files:[file]
+          }).catch(function(){
+            window.open('https://wa.me/96171015510?text='+waMsg,'_blank');
+          });
+        } else {
+          window.open('https://wa.me/96171015510?text='+waMsg,'_blank');
+        }
+      },'image/jpeg',0.9);
+      return true;
+    }
+    // Retake button (y 468-504)
+    if(canvasY>468&&canvasY<505){
+      phoneCameraState='live'; phoneCapturedImage=null;
+      navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:256},height:{ideal:512}},audio:false})
+        .then(function(stream){phoneCameraStream=stream;phoneCameraVideo.srcObject=stream;phoneCameraVideo.play();})
+        .catch(function(){phoneCameraState='error';});
+      return true;
     }
   }
   return true;
